@@ -8,8 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Carrega o estado atual do bloqueio global
   chrome.storage.sync.get('blockAllSites', (data) => {
     const blockAllSites = data.blockAllSites || false;
-    toggleBlockAllBtn.textContent = blockAllSites ? 'Desativar Bloqueio Global' : 'Ativar Bloqueio Global';
+    toggleBlockAllBtn.innerHTML = blockAllSites
+      ? createIcon('shield_unlock', 'Desativar Bloqueio Global')
+      : createIcon('shield_lock', 'Ativar Bloqueio Global');
   });
+
+  function createIcon(icon, msg) {
+    return `<img src="icons/${icon}.svg" alt="Ícone ${icon}" width="32" height="32" /> ${msg}`;
+  }
 
   // Carrega o estado atual da aba aberta e verifica se ela está na lista de bloqueio
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -19,11 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.sync.get('blockedSites', (data) => {
       let blockedSites = data.blockedSites || [];
 
-      if (blockedSites.includes(domain)) {
-        blockThisSiteBtn.innerText = `Remover Site da Lista de Bloqueio`;
-      } else {
-        blockThisSiteBtn.innerText = `Adicionar Site na Lista de Bloqueio`;
-      }
+      blockThisSiteBtn.innerHTML = blockedSites.includes(domain)
+        ? createIcon('shield_remove', 'Remover Site da Lista de Bloqueio')
+        : createIcon('shield_add', 'Adicionar Site na Lista de Bloqueio');
     });
   });
 
@@ -32,7 +36,9 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.sync.get('blockAllSites', (data) => {
       const newStatus = !data.blockAllSites;
       chrome.storage.sync.set({ blockAllSites: newStatus });
-      toggleBlockAllBtn.textContent = newStatus ? 'Desativar Bloqueio Global' : 'Ativar Bloqueio Global';
+      toggleBlockAllBtn.innerHTML = newStatus
+        ? createIcon('shield_unlock', 'Desativar Bloqueio Global')
+        : createIcon('shield_lock', 'Ativar Bloqueio Global');
     });
   });
 
@@ -48,12 +54,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!blockedSites.includes(domain)) {
           blockedSites.push(domain);
           chrome.storage.sync.set({ blockedSites });
-          blockThisSiteBtn.innerText = `Remover Site da Lista de Bloqueio`;
+          blockThisSiteBtn.innerHTML = createIcon('shield_remove', 'Remover Site da Lista de Bloqueio');
           alert(`O site ${domain} foi adicionado na lista de bloqueio.`);
         } else {
           const newblockedSites = blockedSites.filter((item) => item !== domain);
           chrome.storage.sync.set({ blockedSites: newblockedSites });
-          blockThisSiteBtn.innerText = `Adicionar Site na Lista de Bloqueio`;
+          resetBtnBlockThisSite();
           alert(`O site ${domain} foi removido da lista de bloqueio.`);
         }
 
@@ -71,24 +77,77 @@ document.addEventListener('DOMContentLoaded', () => {
   clearBlockedSitesList.addEventListener('click', () => {
     chrome.storage.sync.set({ blockedSites: [] });
     alert(`Lista de sites bloqueados limpa`);
-    blockThisSiteBtn.innerText = `Adicionar Site na Lista de Bloqueio`;
+    resetBtnBlockThisSite();
     showBlockedSites();
   });
 
   // Método para mostrar a lista de sites bloqueados
   function showBlockedSites() {
     chrome.storage.sync.get('blockedSites', (data) => {
+      blockedSitesList.classList.remove('inactive');
       const blockedSites = data.blockedSites || [];
       blockedSitesList.innerHTML = '';
 
       if (blockedSites.length > 0) {
         blockedSites.forEach((site) => {
           const listItem = document.createElement('div');
-          listItem.textContent = site;
+          listItem.classList.add('list-item');
+          const text = document.createElement('span');
+          text.textContent = site;
+          const btnDelete = document.createElement('button');
+          btnDelete.classList.add('delete');
+          btnDelete.id = site;
+          btnDelete.addEventListener('click', deleteBlockedSite);
+
+          listItem.appendChild(text);
+          listItem.appendChild(btnDelete);
+
           blockedSitesList.appendChild(listItem);
         });
       } else {
         blockedSitesList.textContent = 'Nenhum site bloqueado.';
+      }
+    });
+  }
+
+  // Método do botão para deletar um site bloqueado da lista
+  function deleteBlockedSite({ target }) {
+    deleteFromBlockedSitesList(target.id);
+  }
+
+  // Método para deletar um site da lista
+  function deleteFromBlockedSitesList(domain) {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const url = new URL(tabs[0].url);
+      const actualDomain = url.hostname;
+
+      chrome.storage.sync.get('blockedSites', (data) => {
+        let blockedSites = data.blockedSites || [];
+
+        const newblockedSites = blockedSites.filter((item) => item !== domain);
+        chrome.storage.sync.set({ blockedSites: newblockedSites });
+        if (actualDomain === domain) {
+          resetBtnBlockThisSite();
+        }
+        alert(`O site ${domain} foi removido da lista de bloqueio.`);
+
+        showBlockedSites();
+      });
+    });
+  }
+
+  function resetBtnBlockThisSite() {
+    blockThisSiteBtn.innerHTML = createIcon('shield_add', 'Adicionar Site na Lista de Bloqueio');
+  }
+
+  function removeMenuItem() {
+    const menuItemId = 'openInNewTab';
+
+    // Remova o item de menu existente com esse ID (se houver)
+    chrome.contextMenus.remove(menuItemId, () => {
+      if (chrome.runtime.lastError) {
+        console.log('Item não existe.');
+        return;
       }
     });
   }

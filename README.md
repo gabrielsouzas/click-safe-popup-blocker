@@ -3,6 +3,8 @@
 ![version](https://img.shields.io/badge/version-1.0.0-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
+![Interface](img/image-1.png)
+
 **Click Safe Popup Blocker** é uma extensão para navegadores baseados em Chromium que impede que novas janelas e abas sejam abertas sem o consentimento do usuário. Ela garante que os sites só possam abrir novas abas ou janelas quando o usuário optar explicitamente por isso, ao clicar com o botão direito e selecionar "Abrir link em uma nova guia".
 
 ## 🛠 Funcionalidades
@@ -37,10 +39,6 @@
 2. **Adicionar/remover sites à lista de bloqueio**: No popup, clique em "Adicionar Site à Lista de Bloqueio" para incluir o site atual na lista de bloqueio, ou clique em "Remover Site da Lista de Bloqueio" para removê-lo.
 
 3. **Ver sites bloqueados**: Clique no botão "Ver Sites Bloqueados" para ver a lista dos sites onde o bloqueio está ativo.
-
-## 🖼 Interface
-
-![alt text](image.png)
 
 ## 👤 Autor
 

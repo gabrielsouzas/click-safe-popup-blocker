@@ -40,27 +40,29 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-// chrome.webNavigation.onCreatedNavigationTarget.addListener((details) => {
-//   // Bloqueia novas abas/janelas exceto quando o menu de contexto é usado
-//   chrome.tabs.get(details.sourceTabId, (tab) => {
-//     if (!tab.active) {
-//       // Se o usuário não ativou a aba diretamente, a aba/janela é bloqueada
-//       chrome.tabs.remove(details.tabId);
-//       console.log(`Abertura automática bloqueada: ${details.url}`);
-//     }
-//   });
-// });
+/** Criação do menu para clique para abrir uma nova guia  */
 
-// Cria um menu de contexto para abrir o link em uma nova guia
-chrome.contextMenus.create({
-  id: 'openInNewTab',
-  title: '[BLOQUEADA] Abrir link em uma nova guia',
-  contexts: ['link'],
+// Defina o ID do item de menu
+const menuItemId = 'openInNewTab';
+
+// Remova o item de menu existente com esse ID (se houver)
+chrome.contextMenus.remove(menuItemId, () => {
+  if (chrome.runtime.lastError) {
+    console.log('Item não existe, criando um novo.');
+  }
+
+  // Agora crie o item de menu de contexto sem o onclick
+  chrome.contextMenus.create({
+    id: menuItemId,
+    title: '[ABAS BLOQUEADAS] Abrir em nova aba',
+    contexts: ['link'], // O menu aparecerá apenas para links
+  });
 });
 
+// Use o evento onClicked para tratar cliques no menu
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'openInNewTab') {
-    // Abre o link em uma nova aba
+  if (info.menuItemId === menuItemId) {
+    // O menuItemId é "openInNewTab", ou seja, trata do item que criamos
     chrome.tabs.create({ url: info.linkUrl });
   }
 });
