@@ -75,10 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Limpa a lista de sites bloqueados
   clearBlockedSitesList.addEventListener('click', () => {
-    chrome.storage.sync.set({ blockedSites: [] });
-    alert(`Lista de sites bloqueados limpa`);
-    resetBtnBlockThisSite();
-    showBlockedSites();
+    const confirmResponse = confirm(`Confirma a limpeza da lista de bloqueio?`);
+    if (confirmResponse) {
+      chrome.storage.sync.set({ blockedSites: [] });
+      // alert('Lista de sites bloqueados limpa');
+      resetBtnBlockThisSite();
+      showBlockedSites();
+    }
   });
 
   // Método para mostrar a lista de sites bloqueados
@@ -112,7 +115,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Método do botão para deletar um site bloqueado da lista
   function deleteBlockedSite({ target }) {
-    deleteFromBlockedSitesList(target.id);
+    const confirmResponse = confirm(`Confirma a exclusão do site [${target.id}] da lista de bloqueio?`);
+    if (confirmResponse) {
+      deleteFromBlockedSitesList(target.id);
+    }
   }
 
   // Método para deletar um site da lista
@@ -129,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (actualDomain === domain) {
           resetBtnBlockThisSite();
         }
-        alert(`O site ${domain} foi removido da lista de bloqueio.`);
+        // alert(`O site ${domain} foi removido da lista de bloqueio.`);
 
         showBlockedSites();
       });

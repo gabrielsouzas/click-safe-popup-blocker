@@ -1,163 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="popup.css" />
     <title>Click Safe</title>
-    <style>
-      @font-face {
-        font-family: 'Poppins';
-        src: url('fonts/Poppins/Poppins-Regular.ttf') format('truetype');
-        font-weight: normal;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'Poppins';
-        src: url('fonts/Poppins/Poppins-Medium.ttf') format('truetype');
-        font-weight: 500;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'Poppins';
-        src: url('fonts/Poppins/Poppins-Bold.ttf') format('truetype');
-        font-weight: 700;
-        font-style: normal;
-      }
-      * {
-        font-family: 'Poppins', sans-serif;
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      html {
-        width: 320px;
-        background: #f0f0f0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      body {
-        background: #1e1e1e;
-        padding: 20px;
-        width: 100%;
-        color: #fff;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-
-        align-items: center;
-        display: flex;
-        flex-direction: column;
-      }
-      h3 {
-        text-align: center;
-        color: #f0f0f0;
-        font-size: 18px;
-        margin-bottom: 20px;
-      }
-      .main-icon {
-        width: 82px;
-        height: 82px;
-        margin-bottom: 16px;
-      }
-      .button {
-        background-color: #488effda;
-        border-radius: 8px;
-        border: none;
-        color: white;
-        cursor: pointer;
-        font-size: 12px;
-        font-weight: 500;
-        margin-bottom: 12px;
-        padding: 12px;
-        width: 100%;
-        transition: background-color 0.3s ease;
-
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-      }
-      .button:hover {
-        background-color: #2563eb;
-      }
-      .button:disabled {
-        background-color: #7f7f7f;
-      }
-      #blocked-sites {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-      }
-      #blocked-sites button {
-        width: 48%;
-        background-color: #5ab99ac7;
-      }
-      #blocked-sites button:hover {
-        background-color: #059669;
-      }
-      #blocked-sites-list {
-        padding: 10px;
-        background-color: #2d2d2d;
-        border-radius: 8px;
-        width: 100%;
-        max-height: 150px;
-        overflow-y: auto;
-        /* border: 1px solid #ccc; */
-      }
-      .inactive {
-        display: none;
-      }
-      .list-item {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: 2px;
-
-        padding: 6px;
-        font-weight: bold;
-        color: #f87171;
-      }
-      .list-item:not(:last-child) {
-        border-bottom: 1px solid #444;
-      }
-      .delete {
-        background-image: url('icons/delete_24dp_F87171_FILL0_wght400_GRAD0_opsz24.svg');
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        padding: 5px;
-
-        height: 25px;
-        width: 25px;
-        background-color: transparent;
-        border: none;
-        cursor: pointer;
-
-        border: solid 1px transparent;
-      }
-      .delete:hover {
-        border-width: 1px;
-        border-style: outset;
-        border-color: buttonborder;
-        border-image: initial;
-        border-radius: 4px;
-      }
-
-      .icon {
-        background-image: url('icons/shield_lock.svg');
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        padding: 5px;
-
-        height: 25px;
-        width: 25px;
-        background-color: transparent;
-      }
-    </style>
   </head>
   <body>
-    <!-- <h3>Click Safe</h3> -->
-
     <img src="icons/icon236.png" class="main-icon" alt="Ícone" />
     <button id="toggle-block-all" class="button">Ativar Bloqueio Global</button>
     <button id="block-this-site" class="button">Adicionar Site na Lista de Bloqueio</button>
@@ -166,6 +15,7 @@
       <button id="clear-blocked-sites" class="button">Limpar Sites Bloqueados</button>
     </div>
     <div id="blocked-sites-list" class="inactive"></div>
+
     <script src="popup.js"></script>
   </body>
 </html>
