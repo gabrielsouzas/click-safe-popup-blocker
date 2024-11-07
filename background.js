@@ -2,67 +2,178 @@ let blockAllSites = false;
 let blockedSites = [];
 
 // Carrega as configurações ao iniciar
-chrome.storage.sync.get(['blockAllSites', 'blockedSites'], (data) => {
-  blockAllSites = data.blockAllSites || false;
-  blockedSites = data.blockedSites || [];
-});
+initializeSettings();
 
-chrome.webNavigation.onCreatedNavigationTarget.addListener((details) => {
-  // Bloqueia a aba temporariamente
-  // chrome.tabs.remove(details.tabId);
+// Listeners principais
+chrome.webNavigation.onCreatedNavigationTarget.addListener(handleNavigation);
+// chrome.windows.onCreated.addListener(handlePopupWindow);
+chrome.storage.onChanged.addListener(updateSettings);
+initializeContextMenu();
+// listenForContextUpdates();
 
+/** Função para inicializar as configurações da extensão */
+function initializeSettings() {
+  chrome.storage.sync.get(['blockAllSites', 'blockedSites'], (data) => {
+    blockAllSites = data.blockAllSites || false;
+    blockedSites = data.blockedSites || [];
+  });
+}
+
+/** Manipula a criação de nova aba e bloqueia se necessário */
+function handleNavigation(details) {
   chrome.tabs.get(details.sourceTabId, (tab) => {
-    const url = new URL(tab.url);
-    const domain = url.hostname;
+    const domain = extractDomain(tab);
 
-    // Verifica se o bloqueio está ativado para todos os sites ou apenas para os específicos
-    if (blockAllSites || blockedSites.includes(domain)) {
-      chrome.tabs.remove(details.tabId); // Bloqueia a nova aba/janela
+    if (shouldBlockSite(domain)) {
+      chrome.tabs.remove(details.tabId);
       console.log(`Aba/janela bloqueada: ${details.url}`);
     }
   });
-});
+}
 
-chrome.windows.onCreated.addListener((window) => {
-  if (window.type === 'popup') {
-    chrome.windows.remove(window.id);
-    console.log(`Nova janela popup bloqueada: ${window.id}`);
+/** Manipula a criação de janelas popup indesejadas */
+// async function handlePopupWindow(window) {
+//   const isCrrntWBloqdLst = await isCurrentWindowInBloquedList();
+//   if (isCrrntWBloqdLst) {
+//     if (window.type === 'popup') {
+//       chrome.windows.remove(window.id);
+//       console.log(`Nova janela popup bloqueada: ${window.id}`);
+//     }
+//   }
+// }
+
+/** Verifica se o site deve ser bloqueado */
+function shouldBlockSite(domain) {
+  return blockAllSites || blockedSites.includes(domain);
+}
+
+/** Extrai o domínio de uma URL */
+// function extractDomain(url) {
+//   try {
+//     return new URL(url).hostname;
+//   } catch (error) {
+//     console.error('URL inválida:', error);
+//     return null;
+//   }
+// }
+
+function extractDomain(url) {
+  try {
+    if (url.url !== '') {
+      return new URL(url.url).hostname;
+    }
+    if (url.pendingUrl !== '') {
+      return new URL(url.pendingUrl).hostname;
+    }
+    return '';
+  } catch (error) {
+    console.error('URL inválida:', error);
+    return '';
   }
-});
+}
 
-// Listener para atualizar as configurações
-chrome.storage.onChanged.addListener((changes) => {
-  if (changes.blockAllSites) {
-    blockAllSites = changes.blockAllSites.newValue;
-  }
-  if (changes.blockedSites) {
-    blockedSites = changes.blockedSites.newValue;
-  }
-});
+/** Atualiza as configurações quando alteradas no storage */
+function updateSettings(changes) {
+  if (changes.blockAllSites) blockAllSites = changes.blockAllSites.newValue;
+  if (changes.blockedSites) blockedSites = changes.blockedSites.newValue;
+}
 
-/** Criação do menu para clique para abrir uma nova guia  */
+/** Configura o menu de contexto para abrir links em nova aba */
+function initializeContextMenu() {
+  // if (!isCurrentWindowInBloquedList()) {
+  //   chrome.contextMenus.removeAll();
+  //   return;
+  // }
 
-// Defina o ID do item de menu
-const menuItemId = 'openInNewTab';
+  const menuItemIdNewTab = 'openInNewTab';
+  const menuItemIdNewWindow = 'openInNewWindow';
+  const menuItemIdIncognitoWindow = 'openInIncognitoWindow';
 
-// Remova o item de menu existente com esse ID (se houver)
-chrome.contextMenus.remove(menuItemId, () => {
-  if (chrome.runtime.lastError) {
-    console.log('Item não existe, criando um novo.');
-  }
+  // Remove os itens de menu existentes
+  // [menuItemIdNewTab /*, menuItemIdNewWindow, menuItemIdIncognitoWindow*/].forEach((id) => {
+  //   chrome.contextMenus.remove(id, () => {
+  //     if (chrome.runtime.lastError) {
+  //       console.log(`Item de menu ${id} não existe, criando um novo.`);
+  //     }
+  //   });
+  // });
 
-  // Agora crie o item de menu de contexto sem o onclick
-  chrome.contextMenus.create({
-    id: menuItemId,
-    title: '[ABAS BLOQUEADAS] Abrir em nova aba',
-    contexts: ['link'], // O menu aparecerá apenas para links
+  cleanContextMenu(menuItemIdNewTab, menuItemIdNewWindow, menuItemIdIncognitoWindow);
+
+  createContextMenu(menuItemIdNewTab, 'Abrir link em nova guia');
+  createContextMenu(menuItemIdNewWindow, 'Abrir link em nova janela');
+  createContextMenu(menuItemIdIncognitoWindow, 'Abrir link em janela privada');
+
+  createLinksListeners({
+    newTab: menuItemIdNewTab,
+    newWindow: menuItemIdNewWindow,
+    incognitoWindow: menuItemIdIncognitoWindow,
   });
-});
+}
 
-// Use o evento onClicked para tratar cliques no menu
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === menuItemId) {
-    // O menuItemId é "openInNewTab", ou seja, trata do item que criamos
-    chrome.tabs.create({ url: info.linkUrl });
-  }
-});
+// Remove os itens de menu existentes
+function cleanContextMenu(...menuItens) {
+  menuItens.forEach((id) => {
+    chrome.contextMenus.remove(id, () => {
+      if (chrome.runtime.lastError) {
+        console.log(`Item de menu ${id} não existe, criando um novo.`);
+      }
+    });
+  });
+}
+
+// Abre um link em uma nova aba
+function openLinkInNewTab(url) {
+  chrome.tabs.create({ url });
+}
+
+function createContextMenu(id, title) {
+  chrome.contextMenus.create({
+    id: id,
+    title: `[CLICK SAFE] ${title}`,
+    contexts: ['link'],
+  });
+}
+
+function openLinkWindow(url, incognito = false, type = 'normal') {
+  chrome.windows.create({ url, type, incognito });
+}
+
+function createLinksListeners(menuItems) {
+  const actions = {
+    [menuItems.newTab]: (url) => openLinkInNewTab(url),
+    [menuItems.newWindow]: (url) => openLinkWindow(url),
+    [menuItems.incognitoWindow]: (url) => openLinkWindow(url, true),
+  };
+
+  chrome.contextMenus.onClicked.addListener((info) => {
+    const action = actions[info.menuItemId];
+    if (action && info.linkUrl) {
+      action(info.linkUrl);
+    }
+  });
+}
+
+// async function isCurrentWindowInBloquedList() {
+//   let response = false;
+//   await chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+//     try {
+//       const domain = extractDomain(tab);
+//       chrome.storage.sync.get('blockedSites', ({ blockedSites = [] }) => {
+//         response = blockedSites.includes(domain);
+//       });
+//     } catch (error) {
+//       console.log(error);
+//     }
+//   });
+
+//   return response;
+// }
+
+// function listenForContextUpdates() {
+//   chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
+//     if (changeInfo.status === 'complete') {
+//       isCurrentWindowInBloquedList() ? initializeContextMenu() : chrome.contextMenus.removeAll();
+//     }
+//   });
+// }
