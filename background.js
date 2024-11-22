@@ -21,26 +21,35 @@ function initializeSettings() {
 
 /** Manipula a criação de nova aba e bloqueia se necessário */
 function handleNavigation(details) {
+  // chrome.tabs.get(details.sourceTabId, (tab) => {
+  //   const domain = extractDomain(tab);
+
+  //   if (shouldBlockSite(domain)) {
+  //     chrome.tabs.remove(details.tabId);
+  //     console.log(`Aba/janela bloqueada: ${details.url}`);
+  //   }
+  // });
+
   chrome.tabs.get(details.sourceTabId, (tab) => {
     const domain = extractDomain(tab);
-
-    if (shouldBlockSite(domain)) {
+    const urlToCheck = details.url || details.pendingUrl || '';
+    if (shouldBlockSite(domain) || shouldBlockSite(urlToCheck)) {
       chrome.tabs.remove(details.tabId);
-      console.log(`Aba/janela bloqueada: ${details.url}`);
+      console.log(`Bloqueado: ${details.url || details.pendingUrl}`);
     }
   });
 }
 
 /** Manipula a criação de janelas popup indesejadas */
-// async function handlePopupWindow(window) {
-//   const isCrrntWBloqdLst = await isCurrentWindowInBloquedList();
-//   if (isCrrntWBloqdLst) {
-//     if (window.type === 'popup') {
-//       chrome.windows.remove(window.id);
-//       console.log(`Nova janela popup bloqueada: ${window.id}`);
-//     }
-//   }
-// }
+async function handlePopupWindow(window) {
+  const isCrrntWBloqdLst = await isCurrentWindowInBloquedList();
+  if (isCrrntWBloqdLst) {
+    if (window.type === 'popup') {
+      chrome.windows.remove(window.id);
+      console.log(`Nova janela popup bloqueada: ${window.id}`);
+    }
+  }
+}
 
 /** Verifica se o site deve ser bloqueado */
 function shouldBlockSite(domain) {
@@ -57,17 +66,27 @@ function shouldBlockSite(domain) {
 //   }
 // }
 
-function extractDomain(url) {
+// function extractDomain(url) {
+//   try {
+//     if (url.url !== '') {
+//       return new URL(url.url).hostname;
+//     }
+//     if (url.pendingUrl !== '') {
+//       return new URL(url.pendingUrl).hostname;
+//     }
+//     return '';
+//   } catch (error) {
+//     console.error('URL inválida:', error);
+//     return '';
+//   }
+// }
+
+function extractDomain(tab) {
   try {
-    if (url.url !== '') {
-      return new URL(url.url).hostname;
-    }
-    if (url.pendingUrl !== '') {
-      return new URL(url.pendingUrl).hostname;
-    }
-    return '';
+    const url = tab.url || tab.pendingUrl || '';
+    return new URL(url).hostname;
   } catch (error) {
-    console.error('URL inválida:', error);
+    console.error('Erro ao extrair domínio:', error);
     return '';
   }
 }
